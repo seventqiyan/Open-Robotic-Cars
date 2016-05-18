@@ -3,13 +3,18 @@
   定时器与引脚关系
   timer 0 (controls pin 13, 4)
   timer 1 (controls pin 12, 11)
-  timer 2 (controls pin 10, 9)//由于使用了定时中断这里不能用作PWM输出了
+  timer 2 (controls pin 10, 9)//由s于使用了定时中断这里不能用作PWM输出了
   timer 3 (controls pin 5, 3, 2)
   timer 4 (controls pin 8, 7, 6)
-*/
-/*******************头文件引用部分****************/
+ ********************* 串口通信协议部分********************
+  版本一
+  许可状态+方向+速度+刹车+总和（中间使用"，"分割）
+
+  /*******************头文件引用部分****************/
 #include <U8glib.h>//显示屏
+
 U8GLIB_ST7920_128X64_1X u8g(3, 9, 8); //SCK = en = 18, MOSI = rw = 16, CS = di = 17//屏幕接线
+
 #include <avr/wdt.h>//看门狗
 #include<FlexiTimer2.h>//定时中断（2560用这个）
 #include <Servo.h>//舵机库
@@ -20,23 +25,33 @@ Servo steering;//方向舵机
 /*******************引脚定义部分******************/
 const int encoder_pin = 2;//编码器中断引脚
 const int emergency_switch_pin = 3;//紧急切换引脚
+
 const int accelerator_pwm = 8; //油门PWM值输出引脚
 const int direction_pwm = 9; //方向PWM值输出引脚
+
 const int steering_whell_voltage = 0;//方向电压输入引脚
 const int accelerator_voltage = 1; //油门电压输入引脚
+
+const int brake_in = 22;//刹车输入
+const int brake_out = 23;//刹车输出
 
 /*******************动态变量部分******************/
 boolean total_state = false; //总状态
 boolean unmanned = false;//驾驶状态,不允许
 boolean host_unmanned = false; //电脑是否禁止自动驾驶,不允许
+boolean brake_unmanned = false; //刹车状态
 int encoder_count = 0; //编码器计数
 unsigned int encoder_time0;//临时时间变量
+
 unsigned int encoder_time1; //一圈时间差
 int tire_speed = 0, per_hour = 0; //转速r/min，时速km/h
+
 int steering_whell_voltage_adc;//方向电压数模转换变量
 int accelerator_voltage_adc;//油门电压数模转换变量
+
 int steering_whell_voltage_out_pwm;//方向电输出变量
 int accelerator_voltage_out_pwm;//油门电压输出变量
+
 int obstacle_1,/*超声波1距离*/
     obstacle_2,/*2*/
     obstacle_3,/*3*/
@@ -46,6 +61,12 @@ int obstacle_1,/*超声波1距离*/
     obstacle_7,/*7*/
     obstacle_8;/*8*/
 unsigned int tellurometer_survey;//微波测距
+
+//串口变量
+String com_data = "";//字符串变量，赋空值
+int num_data[5] = {0}, serial_tag = 0;
+int check;//校验值
+
 /*************************************************/
 void setup()
 {
@@ -85,14 +106,14 @@ void loop()
   }
   wdt_reset();//喂狗
   speed_per_hour();//转速以及时速函数
-
-  u8g.firstPage();
+  /***********************/
+  u8g.firstPage();//显示必备
   do
   {
-    LCD();
+    lcd();
   } while ( u8g.nextPage() );
-
-  wdt_reset();
+  /***********************/
+  wdt_reset();//看门狗复位
 }
 
 /*******
@@ -183,13 +204,12 @@ int Filter(int direct)
   return sum / (DATA_MAX - 2);
 }
 /*
-  显示屏函数(！！！所有位置参数待修改！！！)
+  显示屏函数(！！！位置参数待修改！！！)
 */
-void LCD()
+void lcd()
 {
 
   u8g.setFont(u8g_font_timB08);
-  u8g.drawStr( 0, 20, "Open Robotic Cars");
   // 转速
   u8g.setPrintPos(1, 26);
   u8g.print(tire_speed);
@@ -224,3 +244,50 @@ void LCD()
   u8g.setPrintPos(1, 26);
   u8g.print(total_state);
 }
+/*
+  串口读取上位机数据部分,参考来源：http://www.geek-workshop.com/thread-260-1-1.html
+*//*许可状态+方向+速度+刹车+总和（中间使用"，"分割）*/
+void serial_port()
+{
+  int j = 0; //j为拆分后数组的位置计数
+  while (Serial.available() > 0)//不断检查串口是否有数据
+  {
+    com_data += char(Serial.read());//读入的数据给com_data
+    delay(2);//延时，不然丢数据
+    serial_tag = 1;//标记串口是否被读取
+  }
+  if (serial_tag = 1);//如果接收到数据则执行com_data分析操作，否则什么都不做。
+  {
+    Serial.println(com_data);//显示读入的字符串
+    /**********************这里是重点************************/
+    for (int i = 0; i < com_data.length(); i++)//以串口读取字符串长度循环，
+      if (com_data[i] == ',')
+      {
+        //逐个分析com_data[i]字符串的文字，如果碰到文字是分隔符（这里选择逗号分割）则将结果数组位置下移一位
+        //即比如11,22,33,55开始的11记到numdata[0];碰到逗号就j等于1了，
+        //再转换就转换到num_data[1];再碰到逗号就记到num_data[2];以此类推，直到字符串结束
+        j++;//
+      }
+      else
+      {
+        //如果没有逗号的话，就将读到的数字*10加上以前读入的数字，
+        //并且(comdata[i] - '0')就是将字符'0'的ASCII码转换成数字0（下面不再叙述此问题，直接视作数字0）。
+        //比如输入数字是12345，有5次没有碰到逗号的机会，就会执行5次此语句。
+        //因为左边的数字先获取到，并且num_data[0]等于0，
+        //所以第一次循环是num_data[0] = 0*10+1 = 1
+        //第二次num_data[0]等于1，循环是num_data[0] = 1*10+2 = 12
+        //第三次是num_data[0]等于12，循环是num_data[0] = 12*10+3 = 123
+        //第四次是num_data[0]等于123，循环是num_data[0] = 123*10+4 = 1234
+        //如此类推，字符串将被变成数字0。
+        num_data[j] = num_data[j] * 10 + (com_data[i] - '0');//com_data的字符串全部转换到num_data
+      }
+  }
+  com_data = String("");//清空comdata以便下一次使用
+  host_unmanned = num_data[1];//电脑许可状态赋值
+  steering_whell_voltage_out_pwm = num_data[2];//方向赋值
+  accelerator_voltage_out_pwm = num_data[3];//油门赋值
+  brake_unmanned = num_data[4];//刹车状态
+  check = num_data[5];//校验值赋值
+  serial_tag = 0;//serial_tag置0
+}
+
