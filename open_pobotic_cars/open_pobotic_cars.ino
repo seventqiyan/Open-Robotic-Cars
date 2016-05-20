@@ -3,7 +3,7 @@
   定时器与引脚关系
   timer 0 (controls pin 13, 4)
   timer 1 (controls pin 12, 11)
-  timer 2 (controls pin 10, 9)//由s于使用了定时中断这里不能用作PWM输出了
+  timer 2 (controls pin 10, 9)//由于使用了定时中断这里不能用作PWM输出了
   timer 3 (controls pin 5, 3, 2)
   timer 4 (controls pin 8, 7, 6)
  ********************* 串口通信协议部分********************
