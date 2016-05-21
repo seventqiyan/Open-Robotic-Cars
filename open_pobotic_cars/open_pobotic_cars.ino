@@ -13,7 +13,7 @@
   /*******************头文件引用部分****************/
 #include <U8glib.h>//显示屏
 
-U8GLIB_ST7920_128X64_1X u8g(3, 9, 8); //SCK = en = 18, MOSI = rw = 16, CS = di = 17//屏幕接线
+U8GLIB_ST7920_128X64 u8g(3, 9, 8, U8G_PIN_NONE); //SCK = en = 18, MOSI = rw = 16, CS = di = 17//屏幕接线（已经调试完毕）
 
 #include <avr/wdt.h>//看门狗
 #include<FlexiTimer2.h>//定时中断（2560用这个）
@@ -70,7 +70,7 @@ int check;//校验值
 /*************************************************/
 void setup()
 {
-  wdt_enable(WDTO_500MS);//开启看门狗，并设置溢出时间为500ms
+  // wdt_enable(WDTO_500MS);//开启看门狗，并设置溢出时间为500ms
   attachInterrupt(encoder_pin, encoder_function , RISING);//中断源，函数encoder_function()，上升沿触发
   attachInterrupt(emergency_switch_pin, emergency_switch , CHANGE ); //中断源，函数emergency_switch()，上升沿触发
   pinMode(encoder_pin, INPUT);//编码器中断引脚定义
@@ -104,7 +104,7 @@ void loop()
     total_state = true; //总状态
 
   }
-  wdt_reset();//喂狗
+
   speed_per_hour();//转速以及时速函数
   /***********************/
   u8g.firstPage();//显示必备
@@ -113,7 +113,7 @@ void loop()
     lcd();
   } while ( u8g.nextPage() );
   /***********************/
-  wdt_reset();//看门狗复位
+  // wdt_reset();//喂狗
 }
 
 /*******
@@ -209,40 +209,68 @@ int Filter(int direct)
 void lcd()
 {
 
-  u8g.setFont(u8g_font_timB08);
+  u8g.setFont(u8g_font_chikitar);
   // 转速
-  u8g.setPrintPos(1, 26);
+  u8g.setPrintPos(64, 29);
+  u8g.print("S=");
   u8g.print(tire_speed);
   //时速
-  u8g.setPrintPos(2, 26);
-  u8g.print(tire_speed);
+  u8g.setPrintPos(64, 35);
+  u8g.print("V=");
+  u8g.print( per_hour);
   //超声波1
-  u8g.setPrintPos(3, 26);
-  u8g.print(tire_speed);
+  u8g.setPrintPos(3, 5);
+  u8g.print("C_1=");
+  u8g.print(obstacle_1);
   //超声波2
-  u8g.setPrintPos(4, 26);
-  u8g.print(tire_speed);
+  u8g.setPrintPos(0, 11);
+  u8g.print("C_2=");
+  u8g.print(obstacle_2);
   //超声波3
-  u8g.setPrintPos(1, 26);
-  u8g.print(tire_speed);
+  u8g.setPrintPos(0, 17);
+  u8g.print("C_3=");
+  u8g.print(obstacle_3);
   //超声波4
-  u8g.setPrintPos(1, 26);
-  u8g.print(tire_speed);
+  u8g.setPrintPos(0, 23);
+  u8g.print("C_4=");
+  u8g.print(obstacle_4);
   //超声波5
-  u8g.setPrintPos(1, 26);
-  u8g.print(tire_speed);
+  u8g.setPrintPos(0, 29);
+  u8g.print("C_5=");
+  u8g.print(obstacle_5);
   //超声波6
-  u8g.setPrintPos(1, 26);
-  u8g.print(tire_speed);
-  //超声波6
-  u8g.setPrintPos(1, 26);
-  u8g.print(tire_speed);
+  u8g.setPrintPos(0, 35);
+  u8g.print("C_6=");
+  u8g.print(obstacle_6);
   //超声波7
-  u8g.setPrintPos(1, 26);
-  u8g.print(tire_speed);
+  u8g.setPrintPos(0, 41);
+  u8g.print("C_7=");
+  u8g.print(obstacle_7);
+  //超声波8
+  u8g.setPrintPos(0, 47);
+  u8g.print("C_8=");
+  u8g.print(obstacle_8);
   //状态
-  u8g.setPrintPos(1, 26);
+  u8g.setPrintPos(0, 64);
+  u8g.print("Z=");
   u8g.print(total_state);
+  //方向电压数模转换变量
+  u8g.setPrintPos(64, 5);
+  u8g.print("F_IN=");
+  u8g.print(steering_whell_voltage_adc);
+  //油门电压数模转换变量
+  u8g.setPrintPos(64, 11);
+  u8g.print("Y_IN=");
+  u8g.print(accelerator_voltage_adc);
+  //方向电输出变量
+  u8g.setPrintPos(64, 17);
+  u8g.print("F_OUT=");
+  u8g.print(steering_whell_voltage_out_pwm);
+  //油门电压输出变量
+  u8g.setPrintPos(64, 23);
+  u8g.print("Y_OUT=");
+  u8g.print(accelerator_voltage_out_pwm);
+
 }
 /*
   串口读取上位机数据部分,参考来源：http://www.geek-workshop.com/thread-260-1-1.html
