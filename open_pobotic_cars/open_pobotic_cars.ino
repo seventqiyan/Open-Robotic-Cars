@@ -7,18 +7,21 @@
   timer 3 (controls pin 5, 3, 2)
   timer 4 (controls pin 8, 7, 6)
  ********************* 串口通信协议部分********************
-  版本一
-  许可状态+方向+速度+刹车+总和（中间使用"，"分割）
-
+  许可状态+方向+速度+刹车+总和（中间使用"，"分割，电脑赋值check）
   /*******************头文件引用部分****************/
 #include <U8glib.h>//显示屏
-
 U8GLIB_ST7920_128X64 u8g(3, 9, 8, U8G_PIN_NONE); //SCK = en = 18, MOSI = rw = 16, CS = di = 17//屏幕接线（已经调试完毕）
 
-#include <avr/wdt.h>//看门狗
+//#include <avr/wdt.h>//看门狗
+
 #include<FlexiTimer2.h>//定时中断（2560用这个）
+
 #include <Servo.h>//舵机库
+
 #include <Wire.h>//IIC通信
+
+#include <PID_v1.h>//PID库不懂的看这里：http://playground.arduino.cc/Code/PIDLibrary
+
 /*******************常量定义部分******************/
 const int perimeter = 60;//轮胎周长单位/cm
 Servo steering;//方向舵机
@@ -40,9 +43,9 @@ boolean total_state = false; //总状态
 boolean unmanned = false;//驾驶状态,不允许
 boolean host_unmanned = false; //电脑是否禁止自动驾驶,不允许
 boolean brake_unmanned = false; //刹车状态
+
 int encoder_count = 0; //编码器计数
 unsigned int encoder_time0;//临时时间变量
-
 unsigned int encoder_time1; //一圈时间差
 int tire_speed = 0, per_hour = 0; //转速r/min，时速km/h
 
@@ -64,9 +67,8 @@ unsigned int tellurometer_survey;//微波测距
 
 //串口变量
 String com_data = "";//字符串变量，赋空值
-int num_data[5] = {0}, serial_tag = 0;
-int check;//校验值
-
+int long num_data[5] = {0}, serial_tag = 0;
+int long check;//校验值
 /*************************************************/
 void setup()
 {
@@ -102,23 +104,31 @@ void loop()
   else
   { //自动控制
     total_state = true; //总状态
-
+    Serial.print("Data");//向电脑要数据
+    delay(2);//延时
+    serial_port();//读取串口数据
+    if ( check == host_unmanned + steering_whell_voltage_out_pwm + accelerator_voltage_out_pwm + brake_unmanned )//校验数据是否正确
+    {
+      analogWrite(accelerator_voltage, accelerator_voltage_out_pwm); //油门输出
+      //方向待写
+    }
+    else
+    {
+      Serial.print("Data_Error");//数据不对~
+    }
   }
-
   speed_per_hour();//转速以及时速函数
-  /***********************/
+
   u8g.firstPage();//显示必备
   do
   {
     lcd();
   } while ( u8g.nextPage() );
-  /***********************/
+
   // wdt_reset();//喂狗
 }
 
-/*******
-***********函数部分******************
-*******/
+/******************函数部分*************************/
 
 void emergency_switch()//紧急切换开关函数
 {
@@ -140,16 +150,14 @@ void encoder_function()//测速中断函数
     encoder_count = 0;
   }
 }
-/*
-*/
+
 void speed_per_hour()//转速，时速函数
 {
   tire_speed = 60000 / encoder_time1;//求转速r/min
   per_hour = (tire_speed * perimeter) * 6; //千米每小时km/h
 }
-/*
-*/
-void serial_print()//串口输出函数
+
+void serial_print_out()//串口输出函数
 {
   Serial.print("tire_speed=");
   Serial.print(tire_speed);
@@ -159,7 +167,7 @@ void serial_print()//串口输出函数
   Serial.print(unmanned);
   Serial.print("host_unmanned=");
   Serial.print(host_unmanned);
-  /************************************/
+ 
   Serial.print("tellurometer_survey=");
   Serial.print(tellurometer_survey);
   Serial.print("obstacle_1=");
@@ -179,7 +187,6 @@ void serial_print()//串口输出函数
   Serial.println();
   delay(2);
 }
-
 /*Hi.Bob提供的滤波函数*/
 #define DATA_MAX 10
 int Filter(int direct)
@@ -203,13 +210,10 @@ int Filter(int direct)
   sum -= minVal;
   return sum / (DATA_MAX - 2);
 }
-/*
-  显示屏函数(！！！位置参数待修改！！！)
-*/
+/* 显示屏函数（位置已经调整好）*/
 void lcd()
 {
-
-  u8g.setFont(u8g_font_chikitar);
+  u8g.setFont(u8g_font_chikitar);//字体设置
   // 转速
   u8g.setPrintPos(64, 29);
   u8g.print("S=");
@@ -270,7 +274,6 @@ void lcd()
   u8g.setPrintPos(64, 23);
   u8g.print("Y_OUT=");
   u8g.print(accelerator_voltage_out_pwm);
-
 }
 /*
   串口读取上位机数据部分,参考来源：http://www.geek-workshop.com/thread-260-1-1.html
@@ -294,7 +297,7 @@ void serial_port()
         //逐个分析com_data[i]字符串的文字，如果碰到文字是分隔符（这里选择逗号分割）则将结果数组位置下移一位
         //即比如11,22,33,55开始的11记到numdata[0];碰到逗号就j等于1了，
         //再转换就转换到num_data[1];再碰到逗号就记到num_data[2];以此类推，直到字符串结束
-        j++;//
+        j++;
       }
       else
       {
