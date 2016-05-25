@@ -73,7 +73,7 @@ int long check;//校验值
 int ACC[3];
 unsigned char Re_buf[11], counter = 0;
 unsigned char sign = 0;
-
+int ACC_x, ACC_y, ACC_z;
 /*************************************************/
 void setup()
 {
@@ -350,11 +350,10 @@ void get_gy953()//加速度模块
       ACC[0] = (Re_buf[8] << 8 | Re_buf[9]) / 100; //合成数据，去掉小数点后2位
       ACC[1] = (Re_buf[6] << 8 | Re_buf[7]) / 100;
       ACC[2] = (Re_buf[4] << 8 | Re_buf[5]) / 100;
-      Serial.print("ACC:\t");
-      Serial.print(ACC[0], DEC); Serial.print("\t"); //显示航向
-      Serial.print(ACC[1], DEC); Serial.print("\t"); //显示俯仰角
-      Serial.println(ACC[2], DEC);                    //显示横滚角
-      delay(10);
+      ACC_x = (ACC[0] / 131);
+      ACC_y = (ACC[1] / 131);
+      ACC_z = (ACC[2] / 131);
+      //   delay(10);
     }
   }
 }
