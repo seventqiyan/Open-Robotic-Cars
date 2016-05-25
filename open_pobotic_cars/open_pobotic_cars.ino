@@ -69,18 +69,34 @@ unsigned int tellurometer_survey;//微波测距
 String com_data = "";//字符串变量，赋空值
 int long num_data[5] = {0}, serial_tag = 0;
 int long check;//校验值
+//串口1变量
+int ACC[3];
+unsigned char Re_buf[11], counter = 0;
+unsigned char sign = 0;
+
 /*************************************************/
 void setup()
 {
   // wdt_enable(WDTO_500MS);//开启看门狗，并设置溢出时间为500ms
+
   attachInterrupt(encoder_pin, encoder_function , RISING);//中断源，函数encoder_function()，上升沿触发
   attachInterrupt(emergency_switch_pin, emergency_switch , CHANGE ); //中断源，函数emergency_switch()，上升沿触发
+
   pinMode(encoder_pin, INPUT);//编码器中断引脚定义
   pinMode(emergency_switch_pin, INPUT);//紧急切换引脚定义
+
   pinMode(steering_whell_voltage, INPUT); //反方盘电压输入引脚
   steering.attach(direction_pwm);//舵机库输出引脚定义
+
   Wire.begin();//不设置地址，当作主机
-  Serial.begin(115200);//串口波特率
+  Serial.begin(115200);//上位机串口波特率
+  //GY953
+  Serial1.begin(115200);//GY953传感器串口波特率
+  delay(2000);       //等一会~让传感器初始化
+  Serial1.write(0XA5);    //命令帧头
+  Serial1.write(0X15);    //指令（连续输出加速度）
+  Serial1.write(0XBA);    //校验和
+
   ADCSRA |=  (1 << ADPS2);
   ADCSRA &=  ~(1 << ADPS1);
   ADCSRA &=  ~(1 << ADPS0);
@@ -92,17 +108,20 @@ void loop()
   if ((unmanned == false && host_unmanned == true)//(手动不允许，电脑允许)
       || (unmanned == false && host_unmanned == false)//(手动电脑都不允许)
       || (unmanned == true && host_unmanned == false)) //(手动允许电脑允许)
-  { //手动控制
+  {
+    //手动控制
     total_state = false; //总状态
     steering_whell_voltage_adc = Filter( steering_whell_voltage); //方向滤波赋值
     accelerator_voltage_adc = Filter(accelerator_voltage);//油门滤波赋值
+
     accelerator_voltage_out_pwm = map(accelerator_voltage_adc, 0, 1024, 0, 255);//缩放赋值（待调试！！！）
     analogWrite(accelerator_voltage, accelerator_voltage_out_pwm); //油门输出
-    //方向暂时不写（待器件测试）
+    //方向(测试部分代码)
 
   }
   else
-  { //自动控制
+  {
+    //自动控制
     total_state = true; //总状态
     Serial.print("Data");//向电脑要数据
     delay(2);//延时
@@ -167,7 +186,7 @@ void serial_print_out()//串口输出函数
   Serial.print(unmanned);
   Serial.print("host_unmanned=");
   Serial.print(host_unmanned);
- 
+
   Serial.print("tellurometer_survey=");
   Serial.print(tellurometer_survey);
   Serial.print("obstacle_1=");
@@ -295,14 +314,14 @@ void serial_port()
       if (com_data[i] == ',')
       {
         //逐个分析com_data[i]字符串的文字，如果碰到文字是分隔符（这里选择逗号分割）则将结果数组位置下移一位
-        //即比如11,22,33,55开始的11记到numdata[0];碰到逗号就j等于1了，
+        //即比如11,22,33,55开始的11记到num_data[0];碰到逗号就j等于1了，
         //再转换就转换到num_data[1];再碰到逗号就记到num_data[2];以此类推，直到字符串结束
         j++;
       }
       else
       {
         //如果没有逗号的话，就将读到的数字*10加上以前读入的数字，
-        //并且(comdata[i] - '0')就是将字符'0'的ASCII码转换成数字0（下面不再叙述此问题，直接视作数字0）。
+        //并且(com_data[i] - '0')就是将字符'0'的ASCII码转换成数字0（下面不再叙述此问题，直接视作数字0）
         //比如输入数字是12345，有5次没有碰到逗号的机会，就会执行5次此语句。
         //因为左边的数字先获取到，并且num_data[0]等于0，
         //所以第一次循环是num_data[0] = 0*10+1 = 1
@@ -321,4 +340,35 @@ void serial_port()
   check = num_data[5];//校验值赋值
   serial_tag = 0;//serial_tag置0
 }
-
+void get_gy953()//加速度模块
+{
+  if (sign)
+  {
+    sign = 0;
+    if (Re_buf[0] == 0x5A && Re_buf[1] == 0x5A ) //检查帧头，帧尾
+    {
+      ACC[0] = (Re_buf[8] << 8 | Re_buf[9]) / 100; //合成数据，去掉小数点后2位
+      ACC[1] = (Re_buf[6] << 8 | Re_buf[7]) / 100;
+      ACC[2] = (Re_buf[4] << 8 | Re_buf[5]) / 100;
+      Serial.print("ACC:\t");
+      Serial.print(ACC[0], DEC); Serial.print("\t"); //显示航向
+      Serial.print(ACC[1], DEC); Serial.print("\t"); //显示俯仰角
+      Serial.println(ACC[2], DEC);                    //显示横滚角
+      delay(10);
+    }
+  }
+}
+void serialEvent1() //串口1中断程序
+{
+  while (Serial1.available())
+  {
+    Re_buf[counter] = (unsigned char)Serial1.read();
+    if (counter == 0 && Re_buf[0] != 0x5A) return; // 检查帧头
+    counter++;
+    if (counter == 11)             //接收到数据
+    {
+      counter = 0;               //重新赋值，准备下一帧数据的接收
+      sign = 1;
+    }
+  }
+}
