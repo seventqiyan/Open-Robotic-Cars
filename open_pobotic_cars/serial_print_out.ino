@@ -1,0 +1,30 @@
+void serial_print_out()//串口输出函数
+{
+  Serial.print("tire_speed=");
+  Serial.print(tire_speed);
+  Serial.print("per_hour=");
+  Serial.print(per_hour);
+  Serial.print("unmanned=");
+  Serial.print(unmanned);
+  Serial.print("host_unmanned=");
+  Serial.print(host_unmanned);
+
+  Serial.print("tellurometer_survey=");
+  Serial.print(tellurometer_survey);
+  Serial.print("obstacle_1=");
+  Serial.print(obstacle_1);
+  Serial.print("obstacle_2=");
+  Serial.print(obstacle_2);
+  Serial.print("obstacle_3=");
+  Serial.print(obstacle_3);
+  Serial.print("obstacle_4=");
+  Serial.print(obstacle_4);
+  Serial.print("obstacle_5=");
+  Serial.print(obstacle_6);
+  Serial.print("obstacle_7=");
+  Serial.print(obstacle_7);
+  Serial.print("obstacle_8=");
+  Serial.print(obstacle_8);
+  Serial.println();
+  delay(2);
+}

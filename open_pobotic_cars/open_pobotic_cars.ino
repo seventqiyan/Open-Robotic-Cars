@@ -143,7 +143,6 @@ void loop()
   {
     lcd();
   } while ( u8g.nextPage() );
-
   // wdt_reset();//喂狗
 }
 
@@ -175,171 +174,10 @@ void speed_per_hour()//转速，时速函数
   tire_speed = 60000 / encoder_time1;//求转速r/min
   per_hour = (tire_speed * perimeter) * 6; //千米每小时km/h
 }
-
-void serial_print_out()//串口输出函数
-{
-  Serial.print("tire_speed=");
-  Serial.print(tire_speed);
-  Serial.print("per_hour=");
-  Serial.print(per_hour);
-  Serial.print("unmanned=");
-  Serial.print(unmanned);
-  Serial.print("host_unmanned=");
-  Serial.print(host_unmanned);
-
-  Serial.print("tellurometer_survey=");
-  Serial.print(tellurometer_survey);
-  Serial.print("obstacle_1=");
-  Serial.print(obstacle_1);
-  Serial.print("obstacle_2=");
-  Serial.print(obstacle_2);
-  Serial.print("obstacle_3=");
-  Serial.print(obstacle_3);
-  Serial.print("obstacle_4=");
-  Serial.print(obstacle_4);
-  Serial.print("obstacle_5=");
-  Serial.print(obstacle_6);
-  Serial.print("obstacle_7=");
-  Serial.print(obstacle_7);
-  Serial.print("obstacle_8=");
-  Serial.print(obstacle_8);
-  Serial.println();
-  delay(2);
-}
-/*Hi.Bob提供的滤波函数*/
-#define DATA_MAX 10
-int Filter(int direct)
-{
-  unsigned int val;
-  unsigned int sum = 0;
-  unsigned int maxVal = 0;
-  unsigned int minVal = 0;
-  for (int i = 0; i < DATA_MAX; i++) {
-    val = analogRead(direct);
-    sum += val;
-    /* Get the max */
-    if (val > maxVal)
-      maxVal = val;
-    /* Get the minVal */
-    if (val < minVal)
-      minVal = val;
-  }
-  /* Deal the maxVal and the minVal */
-  sum -= maxVal;
-  sum -= minVal;
-  return sum / (DATA_MAX - 2);
-}
-/* 显示屏函数（位置已经调整好）*/
-void lcd()
-{
-  u8g.setFont(u8g_font_chikitar);//字体设置
-  // 转速
-  u8g.setPrintPos(64, 29);
-  u8g.print("S=");
-  u8g.print(tire_speed);
-  //时速
-  u8g.setPrintPos(64, 35);
-  u8g.print("V=");
-  u8g.print( per_hour);
-  //超声波1
-  u8g.setPrintPos(3, 5);
-  u8g.print("C_1=");
-  u8g.print(obstacle_1);
-  //超声波2
-  u8g.setPrintPos(0, 11);
-  u8g.print("C_2=");
-  u8g.print(obstacle_2);
-  //超声波3
-  u8g.setPrintPos(0, 17);
-  u8g.print("C_3=");
-  u8g.print(obstacle_3);
-  //超声波4
-  u8g.setPrintPos(0, 23);
-  u8g.print("C_4=");
-  u8g.print(obstacle_4);
-  //超声波5
-  u8g.setPrintPos(0, 29);
-  u8g.print("C_5=");
-  u8g.print(obstacle_5);
-  //超声波6
-  u8g.setPrintPos(0, 35);
-  u8g.print("C_6=");
-  u8g.print(obstacle_6);
-  //超声波7
-  u8g.setPrintPos(0, 41);
-  u8g.print("C_7=");
-  u8g.print(obstacle_7);
-  //超声波8
-  u8g.setPrintPos(0, 47);
-  u8g.print("C_8=");
-  u8g.print(obstacle_8);
-  //状态
-  u8g.setPrintPos(0, 64);
-  u8g.print("Z=");
-  u8g.print(total_state);
-  //方向电压数模转换变量
-  u8g.setPrintPos(64, 5);
-  u8g.print("F_IN=");
-  u8g.print(steering_whell_voltage_adc);
-  //油门电压数模转换变量
-  u8g.setPrintPos(64, 11);
-  u8g.print("Y_IN=");
-  u8g.print(accelerator_voltage_adc);
-  //方向电输出变量
-  u8g.setPrintPos(64, 17);
-  u8g.print("F_OUT=");
-  u8g.print(steering_whell_voltage_out_pwm);
-  //油门电压输出变量
-  u8g.setPrintPos(64, 23);
-  u8g.print("Y_OUT=");
-  u8g.print(accelerator_voltage_out_pwm);
-}
 /*
   串口读取上位机数据部分,参考来源：http://www.geek-workshop.com/thread-260-1-1.html
 *//*许可状态+方向+速度+刹车+总和（中间使用"，"分割）*/
-void serial_port()
-{
-  int j = 0; //j为拆分后数组的位置计数
-  while (Serial.available() > 0)//不断检查串口是否有数据
-  {
-    com_data += char(Serial.read());//读入的数据给com_data
-    delay(2);//延时，不然丢数据
-    serial_tag = 1;//标记串口是否被读取
-  }
-  if (serial_tag = 1);//如果接收到数据则执行com_data分析操作，否则什么都不做。
-  {
-    Serial.println(com_data);//显示读入的字符串
-    /**********************这里是重点************************/
-    for (int i = 0; i < com_data.length(); i++)//以串口读取字符串长度循环，
-      if (com_data[i] == ',')
-      {
-        //逐个分析com_data[i]字符串的文字，如果碰到文字是分隔符（这里选择逗号分割）则将结果数组位置下移一位
-        //即比如11,22,33,55开始的11记到num_data[0];碰到逗号就j等于1了，
-        //再转换就转换到num_data[1];再碰到逗号就记到num_data[2];以此类推，直到字符串结束
-        j++;
-      }
-      else
-      {
-        //如果没有逗号的话，就将读到的数字*10加上以前读入的数字，
-        //并且(com_data[i] - '0')就是将字符'0'的ASCII码转换成数字0（下面不再叙述此问题，直接视作数字0）
-        //比如输入数字是12345，有5次没有碰到逗号的机会，就会执行5次此语句。
-        //因为左边的数字先获取到，并且num_data[0]等于0，
-        //所以第一次循环是num_data[0] = 0*10+1 = 1
-        //第二次num_data[0]等于1，循环是num_data[0] = 1*10+2 = 12
-        //第三次是num_data[0]等于12，循环是num_data[0] = 12*10+3 = 123
-        //第四次是num_data[0]等于123，循环是num_data[0] = 123*10+4 = 1234
-        //如此类推，字符串将被变成数字0。
-        num_data[j] = num_data[j] * 10 + (com_data[i] - '0');//com_data的字符串全部转换到num_data
-      }
-  }
-  com_data = String("");//清空comdata以便下一次使用
-  host_unmanned = num_data[1];//电脑许可状态赋值
-  steering_whell_voltage_out_pwm = num_data[2];//方向赋值
-  accelerator_voltage_out_pwm = num_data[3];//油门赋值
-  brake_unmanned = num_data[4];//刹车状态
-  check = num_data[5];//校验值赋值
-  serial_tag = 0;//serial_tag置0
-}
+
 void get_gy953()//加速度模块
 {
   if (sign)
@@ -350,9 +188,9 @@ void get_gy953()//加速度模块
       ACC[0] = (Re_buf[8] << 8 | Re_buf[9]) / 100; //合成数据，去掉小数点后2位
       ACC[1] = (Re_buf[6] << 8 | Re_buf[7]) / 100;
       ACC[2] = (Re_buf[4] << 8 | Re_buf[5]) / 100;
-      ACC_x = (ACC[0] / 131);
-      ACC_y = (ACC[1] / 131);
-      ACC_z = (ACC[2] / 131);
+      ACC_x = (ACC[0] / 16383);//除以16383获得加速度值
+      ACC_y = (ACC[1] / 16383);
+      ACC_z = (ACC[2] / 16383);
       //   delay(10);
     }
   }
