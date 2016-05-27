@@ -82,7 +82,14 @@ int ACC_x, ACC_y, ACC_z;
 void setup()
 {
   delay(3000);       //等一会~让传感器初始化
-  // wdt_enable(WDTO_500MS);//开启看门狗，并设置溢出时间为500ms
+  Serial.begin(115200);//上位机串口波特率
+  Serial1.begin(115200);//GY953传感器串口波特率
+  while (!Serial1)
+  {
+    Serial1.write(0XA5);    //命令帧头
+    Serial1.write(0X15);    //指令（连续输出加速度）
+    Serial1.write(0XBA);    //校验和
+    // wdt_enable(WDTO_500MS);//开启看门狗，并设置溢出时间为500ms
 
     attachInterrupt(encoder_pin, encoder_function , RISING);//中断源，函数encoder_function()，上升沿触发
     attachInterrupt(emergency_switch_pin, emergency_switch , CHANGE ); //中断源，函数emergency_switch()，上升沿触发
@@ -94,14 +101,7 @@ void setup()
     steering.attach(direction_pwm);//舵机库输出引脚定义
 
     Wire.begin();//不设置地址，当作主机
-  Serial.begin(115200);//上位机串口波特率
-  //GY953
-  Serial1.begin(115200);//GY953传感器串口波特率
-  while (!Serial1)
-  {
-    Serial1.write(0XA5);    //命令帧头
-    Serial1.write(0X15);    //指令（连续输出加速度）
-    Serial1.write(0XBA);    //校验和
+
   }
   ADCSRA |=  (1 << ADPS2);
   ADCSRA &=  ~(1 << ADPS1);
@@ -110,50 +110,53 @@ void setup()
 }
 /***********************************************/
 void loop()
-{ get_gy953();
-  serial_print_out(); 
- /* if ((unmanned == false && host_unmanned == true)//(手动不允许，电脑允许)
-       || (unmanned == false && host_unmanned == false)//(手动电脑都不允许)
-       || (unmanned == true && host_unmanned == false)) //(手动允许电脑允许)
+{
+  if ((unmanned == false && host_unmanned == true)//(手动不允许，电脑允许)
+      || (unmanned == false && host_unmanned == false)//(手动电脑都不允许)
+      || (unmanned == true && host_unmanned == false)) //(手动允许电脑允许)
+  {
+    //手动控制
+    total_state = false; //总状态
+    steering_whell_voltage_adc = Filter( steering_whell_voltage); //方向滤波赋值
+    accelerator_voltage_adc = Filter(accelerator_voltage);//油门滤波赋值
+
+    accelerator_voltage_out_pwm = map(accelerator_voltage_adc, 0, 1024, 0, 255);//缩放赋值（待调试！！！）
+    analogWrite(accelerator_voltage, accelerator_voltage_out_pwm); //油门输出
+    //方向(测试部分代码)
+    steering_whell_voltage_out_pwm = map(steering_whell_voltage_adc, 0, 1024, 1000, 2000);//方向缩放赋值（待调试！！！）
+    if (1450 <= steering_whell_voltage_out_pwm <= 1550) {
+      steering_whell_voltage_out_pwm = 1500; //消除回中偏差造成的抖动
+    }
+
+    steering.writeMicroseconds(steering_whell_voltage_out_pwm); //方向输出
+  }
+  else
+  {
+    //自动控制
+    total_state = true; //总状态
+    Serial.print("Data");//向电脑要数据
+    delay(2);//延时
+    serial_port();//读取串口数据
+    if ( check == host_unmanned + steering_whell_voltage_out_pwm + accelerator_voltage_out_pwm + brake_unmanned )//校验数据是否正确
     {
-     //手动控制
-     total_state = false; //总状态
-     steering_whell_voltage_adc = Filter( steering_whell_voltage); //方向滤波赋值
-     accelerator_voltage_adc = Filter(accelerator_voltage);//油门滤波赋值
-
-     accelerator_voltage_out_pwm = map(accelerator_voltage_adc, 0, 1024, 0, 255);//缩放赋值（待调试！！！）
-     analogWrite(accelerator_voltage, accelerator_voltage_out_pwm); //油门输出
-     //方向(测试部分代码)
-
+      analogWrite(accelerator_voltage, accelerator_voltage_out_pwm); //油门输出
+      //方向待写
+      steering.writeMicroseconds(steering_whell_voltage_out_pwm); //方向输出
     }
     else
     {
-     //自动控制
-     total_state = true; //总状态
-     Serial.print("Data");//向电脑要数据
-     delay(2);//延时
-     serial_port();//读取串口数据
-     if ( check == host_unmanned + steering_whell_voltage_out_pwm + accelerator_voltage_out_pwm + brake_unmanned )//校验数据是否正确
-     {
-       get_gy953();
-       analogWrite(accelerator_voltage, accelerator_voltage_out_pwm); //油门输出
-       //方向待写
-     }
-     else
-     {
-       Serial.print("Data_Error");//数据不对~
-     }
+      Serial.print("Data_Error");//数据不对~
     }
-    speed_per_hour();//转速以及时速函数
+  }
+  speed_per_hour();//转速以及时速函数
 
-    u8g.firstPage();//显示必备
-    do
-    {
-     lcd();
-    } while ( u8g.nextPage() );
-    // wdt_reset();//喂狗*/
+  u8g.firstPage();//显示必备，将来肯定要去掉的
+  do
+  {
+    lcd();
+  } while ( u8g.nextPage() );
+  // wdt_reset();//喂狗
 }
-
 /******************函数部分*************************/
 
 void emergency_switch()//紧急切换开关函数
