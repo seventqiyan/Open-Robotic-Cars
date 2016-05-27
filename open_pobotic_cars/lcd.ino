@@ -1,14 +1,7 @@
 void lcd()/* 显示屏函数（位置已经调整好）*/
 {
   u8g.setFont(u8g_font_chikitar);//字体设置
-  // 转速
-  u8g.setPrintPos(64, 29);
-  u8g.print("S=");
-  u8g.print(tire_speed);
-  //时速
-  u8g.setPrintPos(64, 35);
-  u8g.print("V=");
-  u8g.print( per_hour);
+
   //超声波1
   u8g.setPrintPos(3, 5);
   u8g.print("C_1=");
@@ -61,4 +54,24 @@ void lcd()/* 显示屏函数（位置已经调整好）*/
   u8g.setPrintPos(64, 23);
   u8g.print("Y_OUT=");
   u8g.print(accelerator_voltage_out_pwm);
+  // 转速
+  u8g.setPrintPos(64, 29);
+  u8g.print("S=");
+  u8g.print(tire_speed);
+  //时速
+  u8g.setPrintPos(64, 35);
+  u8g.print("V=");
+  u8g.print( per_hour);
+  //X轴加速度
+  u8g.setPrintPos(64, 41);
+  u8g.print("ACC_X=");
+  u8g.print(ACC_x);
+  //Y轴加速度
+  u8g.setPrintPos(64, 47);
+  u8g.print("ACC_Y=");
+  u8g.print(ACC_y);
+  //Z轴加速度
+  u8g.setPrintPos(64, 53);
+  u8g.print("ACC_Z=");
+  u8g.print(ACC_z);
 }

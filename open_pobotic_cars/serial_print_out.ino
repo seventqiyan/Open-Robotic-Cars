@@ -1,6 +1,6 @@
 void serial_print_out()//串口输出函数
 {
-  Serial.print("tire_speed=");
+  /*Serial.print("tire_speed=");
   Serial.print(tire_speed);
   Serial.print("per_hour=");
   Serial.print(per_hour);
@@ -8,7 +8,7 @@ void serial_print_out()//串口输出函数
   Serial.print(unmanned);
   Serial.print("host_unmanned=");
   Serial.print(host_unmanned);
-
+  Serial.println();
   Serial.print("tellurometer_survey=");
   Serial.print(tellurometer_survey);
   Serial.print("obstacle_1=");
@@ -25,6 +25,13 @@ void serial_print_out()//串口输出函数
   Serial.print(obstacle_7);
   Serial.print("obstacle_8=");
   Serial.print(obstacle_8);
+  Serial.println();*/
+  Serial.print("ACC_x=");
+  Serial.print(ACC_x);
+  Serial.print("ACC_y=");
+  Serial.print(ACC_y);
+  Serial.print("ACC_z=");
+  Serial.print(ACC_z);
   Serial.println();
   delay(2);
 }

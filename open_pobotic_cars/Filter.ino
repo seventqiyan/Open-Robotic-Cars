@@ -21,3 +21,4 @@ int Filter(int direct)
   sum -= minVal;
   return sum / (DATA_MAX - 2);
 }
+
