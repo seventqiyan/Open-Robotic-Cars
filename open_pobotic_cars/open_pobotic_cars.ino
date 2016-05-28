@@ -13,7 +13,7 @@
 #define SERIAL_RX_BUFFER_SIZE 128//修改串口缓存区大小
 
 #include <U8glib.h>//显示屏
-U8GLIB_ST7920_128X64 u8g(3, 9, 8, U8G_PIN_NONE); //SCK = en = 18, MOSI = rw = 16, CS = di = 17//屏幕接线（已经调试完毕）
+U8GLIB_ST7920_128X64 u8g(2, 3, 4, U8G_PIN_NONE); //SCK = en = 18, MOSI = rw = 16, CS = di = 17//屏幕接线（已经调试完毕原值：3,9,8）
 
 //#include <avr/wdt.h>//看门狗
 
@@ -41,6 +41,9 @@ const int accelerator_voltage = 1; //油门电压输入引脚
 const int brake_in = 22;//刹车输入
 const int brake_out = 23;//刹车输出
 
+const int led_brake = 24;//刹车灯
+const int led_left = 25;//左转灯
+const int led_right = 26;//右转灯
 /*******************动态变量部分******************/
 boolean total_state = false; //总状态
 boolean unmanned = false;//驾驶状态,不允许
@@ -76,33 +79,38 @@ int long check;//校验值
 //串口1变量（加速度传感器）
 int ACC[3];
 unsigned char Re_buf[11], counter = 0;
-//unsigned char sign = 0;
 int ACC_x, ACC_y, ACC_z;
 /*************************************************/
 void setup()
 {
-  delay(3000);       //等一会~让传感器初始化
+
   Serial.begin(115200);//上位机串口波特率
+
   Serial1.begin(115200);//GY953传感器串口波特率
-  while (!Serial1)
-  {
-    Serial1.write(0XA5);    //命令帧头
-    Serial1.write(0X15);    //指令（连续输出加速度）
-    Serial1.write(0XBA);    //校验和
-    // wdt_enable(WDTO_500MS);//开启看门狗，并设置溢出时间为500ms
+  delay(2000);   //等一会~让传感器初始化
+  Serial1.write(0XA5);    //命令帧头
+  Serial1.write(0X15);    //指令（连续输出加速度）
+  Serial1.write(0XBA);    //校验和
 
-    attachInterrupt(encoder_pin, encoder_function , RISING);//中断源，函数encoder_function()，上升沿触发
-    attachInterrupt(emergency_switch_pin, emergency_switch , CHANGE ); //中断源，函数emergency_switch()，上升沿触发
+  Serial2.begin(115200);//超声波串口波特率
 
-    pinMode(encoder_pin, INPUT);//编码器中断引脚定义
-    pinMode(emergency_switch_pin, INPUT);//紧急切换引脚定义
+  // wdt_enable(WDTO_500MS);//开启看门狗，并设置溢出时间为500ms
 
-    pinMode(steering_whell_voltage, INPUT); //反方盘电压输入引脚
-    steering.attach(direction_pwm);//舵机库输出引脚定义
+  attachInterrupt(encoder_pin, encoder_function , RISING);//中断源，函数encoder_function()，上升沿触发
+  attachInterrupt(emergency_switch_pin, emergency_switch , CHANGE ); //中断源，函数emergency_switch()，上升沿触发
 
-    Wire.begin();//不设置地址，当作主机
+  pinMode(encoder_pin, INPUT);//编码器中断引脚定义
+  pinMode(emergency_switch_pin, INPUT);//紧急切换引脚定义
 
-  }
+  pinMode(steering_whell_voltage, INPUT); //方向盘电压输入引脚
+  steering.attach(direction_pwm);//舵机库输出引脚定义
+
+  pinMode(led_brake, OUTPUT);//刹车灯输出引脚定义
+  pinMode(led_left, OUTPUT);//左转灯输出引脚定义
+  pinMode(led_right, OUTPUT);//右转灯输出引脚定义
+
+  Wire.begin();//不设置地址，当作主机
+
   ADCSRA |=  (1 << ADPS2);
   ADCSRA &=  ~(1 << ADPS1);
   ADCSRA &=  ~(1 << ADPS0);
@@ -111,6 +119,7 @@ void setup()
 /***********************************************/
 void loop()
 {
+
   if ((unmanned == false && host_unmanned == true)//(手动不允许，电脑允许)
       || (unmanned == false && host_unmanned == false)//(手动电脑都不允许)
       || (unmanned == true && host_unmanned == false)) //(手动允许电脑允许)
@@ -119,7 +128,10 @@ void loop()
     total_state = false; //总状态
     steering_whell_voltage_adc = Filter( steering_whell_voltage); //方向滤波赋值
     accelerator_voltage_adc = Filter(accelerator_voltage);//油门滤波赋值
-
+    if (digitalRead(brake_in) == HIGH)
+    {
+      brake();//刹车
+    }
     accelerator_voltage_out_pwm = map(accelerator_voltage_adc, 0, 1024, 0, 255);//缩放赋值（待调试！！！）
     analogWrite(accelerator_voltage, accelerator_voltage_out_pwm); //油门输出
     //方向(测试部分代码)
@@ -127,7 +139,6 @@ void loop()
     if (1450 <= steering_whell_voltage_out_pwm <= 1550) {
       steering_whell_voltage_out_pwm = 1500; //消除回中偏差造成的抖动
     }
-
     steering.writeMicroseconds(steering_whell_voltage_out_pwm); //方向输出
   }
   else
@@ -139,6 +150,10 @@ void loop()
     serial_port();//读取串口数据
     if ( check == host_unmanned + steering_whell_voltage_out_pwm + accelerator_voltage_out_pwm + brake_unmanned )//校验数据是否正确
     {
+      if (brake_unmanned = true)
+      {
+        brake();
+      }
       analogWrite(accelerator_voltage, accelerator_voltage_out_pwm); //油门输出
       //方向待写
       steering.writeMicroseconds(steering_whell_voltage_out_pwm); //方向输出
@@ -185,7 +200,23 @@ void speed_per_hour()//转速，时速函数
   tire_speed = 60000 / encoder_time1;//求转速r/min
   per_hour = (tire_speed * perimeter) * 6; //千米每小时km/h
 }
-/*
-  串口读取上位机数据部分,参考来源：http://www.geek-workshop.com/thread-260-1-1.html
-*//*许可状态+方向+速度+刹车+总和（中间使用"，"分割）*/
-
+void brake()//刹车函数ABS防抱死TAT
+{ do {
+    analogWrite(accelerator_voltage, 0); //油门输出0
+    digitalWrite(led_brake, HIGH);
+    digitalWrite(brake_out, HIGH);
+    delay(500);
+    digitalWrite(led_brake, LOW);
+    digitalWrite(brake_out, LOW);
+    delay(500);
+    digitalWrite(led_brake, HIGH);
+    digitalWrite(brake_out, HIGH);
+    delay(100);
+    digitalWrite(led_brake, LOW);
+    digitalWrite(brake_out, LOW);
+    delay(100);
+    digitalWrite(led_brake, HIGH);
+    digitalWrite(brake_out, HIGH);
+  }
+  while (digitalRead(brake_in) == LOW);
+  }

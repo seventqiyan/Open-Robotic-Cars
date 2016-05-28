@@ -1,3 +1,7 @@
+/*
+  串口读取上位机数据部分,参考来源：http://www.geek-workshop.com/thread-260-1-1.html
+*//*许可状态+方向+速度+刹车+总和（中间使用"，"分割）*/
+
 void serial_port()
 {
   int j = 0; //j为拆分后数组的位置计数
