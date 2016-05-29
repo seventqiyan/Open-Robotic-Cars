@@ -122,7 +122,7 @@ void loop()
 
   if ((unmanned == false && host_unmanned == true)//(手动不允许，电脑允许)
       || (unmanned == false && host_unmanned == false)//(手动电脑都不允许)
-      || (unmanned == true && host_unmanned == false)) //(手动允许电脑允许)
+      || (unmanned == true && host_unmanned == false)) //(手动允许电脑不允许)
   {
     //手动控制
     total_state = false; //总状态
@@ -150,7 +150,7 @@ void loop()
     serial_port();//读取串口数据
     if ( check == host_unmanned + steering_whell_voltage_out_pwm + accelerator_voltage_out_pwm + brake_unmanned )//校验数据是否正确
     {
-      if (brake_unmanned = true)
+      if (brake_unmanned = true||digitalRead(brake_in) == HIGH)
       {
         brake();
       }
@@ -203,20 +203,17 @@ void speed_per_hour()//转速，时速函数
 void brake()//刹车函数ABS防抱死TAT
 { do {
     analogWrite(accelerator_voltage, 0); //油门输出0
-    digitalWrite(led_brake, HIGH);
+    digitalWrite(led_brake, HIGH);//亮个刹车灯
     digitalWrite(brake_out, HIGH);
-    delay(500);
-    digitalWrite(led_brake, LOW);
+    delay(500); 
     digitalWrite(brake_out, LOW);
-    delay(500);
-    digitalWrite(led_brake, HIGH);
+    delay(500);  
     digitalWrite(brake_out, HIGH);
     delay(100);
-    digitalWrite(led_brake, LOW);
     digitalWrite(brake_out, LOW);
     delay(100);
-    digitalWrite(led_brake, HIGH);
     digitalWrite(brake_out, HIGH);
   }
   while (digitalRead(brake_in) == LOW);
+      digitalWrite(led_brake, LOW);
   }
