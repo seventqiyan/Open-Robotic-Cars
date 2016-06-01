@@ -25,6 +25,10 @@ U8GLIB_ST7920_128X64 u8g(2, 3, 4, U8G_PIN_NONE); //SCK = en = 18, MOSI = rw = 16
 
 #include <PID_v1.h>//PID库不懂的看这里：http://playground.arduino.cc/Code/PIDLibrary
 
+#include <avr/io.h>
+
+#include <util/delay.h>
+
 /*******************常量定义部分******************/
 const int perimeter = 60;//轮胎周长单位/cm
 Servo steering;//方向舵机
