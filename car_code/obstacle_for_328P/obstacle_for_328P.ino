@@ -18,6 +18,9 @@
 #include <avr/wdt.h>//看门狗
 #include <Wire.h>//IIC通信
 
+#include <SoftwareSerial.h>
+SoftwareSerial mySerial(2, 3); //用2，3作为虚拟串口（RX，TX）
+
 String data = "";//字符串变量，赋空值
 int obstacle_number[8] = {0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67}; //分别对应超声波1~8
 int long iic_data[8] = {0};
@@ -35,66 +38,42 @@ int obstacle_1,/*超声波1距离*/
 void setup()
 {
   delay(200);//延时一会等供电稳定
-  Serial.begin(115200);//超声波串口通信波特率
-  // wdt_enable(WDTO_1S);//开启看门狗，并设置溢出时间为1s
   pinMode(led, OUTPUT);//指示灯输出引脚定义
-  Wire.begin(2);//注册I2C地址，设为2号设备
-  Wire.onRequest(obstacle_wire);//收到命令就调用obstacle_wire函数
+  Serial.begin(115200);//超声波串口通信波特率
+  mySerial.begin(115200);//虚拟串口波特率，不稳定则往下调整
+  // wdt_enable(WDTO_1S);//开启看门狗，并设置溢出时间为1s
 }
 void loop()
 {
   for (int i = 1; i < 8; i++)
   {
+    Serial.write(0x54);
+    Serial.write(obstacle_number[i]);
+
 
   }
 
 
 
 }
-void obstacle_wire()
+void obstacle_serial()
 {
-  Wire.write(obstacle_1); //送出超声波1距离数据
-  Wire.write(",");
-  Wire.write(obstacle_2); //送出超声波2距离数据
-  Wire.write(",");
-  Wire.write(obstacle_3); //送出超声波3距离数据
-  Wire.write(",");
-  Wire.write(obstacle_4); //送出超声波4距离数据
-  Wire.write(",");
-  Wire.write(obstacle_5); //送出超声波5距离数据
-  Wire.write(",");
-  Wire.write(obstacle_6); //送出超声波6距离数据
-  Wire.write(",");
-  Wire.write(obstacle_7); //送出超声波7距离数据
+  mySerial.print(obstacle_1);//
+  mySerial.print(",");
+  mySerial.print(obstacle_2);//
+  mySerial.print(",");
+  mySerial.print(obstacle_3);//
+  mySerial.print(",");
+  mySerial.print(obstacle_4);//
+  mySerial.print(",");
+  mySerial.print(obstacle_5);//
+  mySerial.print(",");
+  mySerial.print(obstacle_6);//
+  mySerial.print(",");
+  mySerial.print(obstacle_7);//
+  mySerial.print(",");
+  mySerial.print(obstacle_8);//
 }
-
-
-
-
-/*
-  测距一次需要60ms，也就是说一秒钟最多16次，
-  考虑单片机资源占用，以及实时性要求，会用328P来跑测距，然后用串口通信
-  int obstacle_number[8]={0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67};//分别对应超声波1~8
-  void serial2()
-  {
-
-  }
-
-  int serial2_obstacle()//串口超声波
-  {
-  unsigned char S_obs[24], i = 0;
-  }
-  Serial2.write(0x54);//模块地址
-  Serial2.write(0x60);//让模块测距
-  while (Serial2.available())
-  {
-  S_obs[i] = (unsigned char)Serial2.read();
-
-
-
-
-  }
-*/
 
 /*更新地址部分(例子)
   void update_address()
