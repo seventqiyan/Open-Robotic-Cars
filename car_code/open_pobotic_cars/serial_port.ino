@@ -13,7 +13,7 @@ void serial_port()
   }
   if (serial_tag = 1);//如果接收到数据则执行com_data分析操作，否则什么都不做。
   {
-    Serial.println(com_data);//显示读入的字符串
+   // Serial.println(com_data);//显示读入的字符串
     /**********************这里是重点************************/
     for (int i = 0; i < com_data.length(); i++)//以串口读取字符串长度循环，
       if (com_data[i] == ',')

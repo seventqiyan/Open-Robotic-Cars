@@ -7,7 +7,7 @@
   timer 3 (controls pin 5, 3, 2)
   timer 4 (controls pin 8, 7, 6)
  ********************* 串口通信协议部分********************
-  许可状态+方向+速度+刹车+总和（中间使用"，"分割，电脑赋值check）
+  许可状态+方向+速度+刹车+总和（中间使用","分割，电脑赋值check）
   /*******************头文件引用部分****************/
 #define SERIAL_TX_BUFFER_SIZE 128//修改串口缓存区大小
 #define SERIAL_RX_BUFFER_SIZE 128//修改串口缓存区大小
@@ -25,9 +25,7 @@ U8GLIB_ST7920_128X64 u8g(2, 3, 4, U8G_PIN_NONE); //SCK = en = 18, MOSI = rw = 16
 
 #include <PID_v1.h>//PID库不懂的看这里：http://playground.arduino.cc/Code/PIDLibrary
 
-#include <avr/io.h>
 
-#include <util/delay.h>
 
 /*******************常量定义部分******************/
 const int perimeter = 60;//轮胎周长单位/cm
@@ -96,8 +94,6 @@ void setup()
   Serial1.write(0X15);    //指令（连续输出加速度）
   Serial1.write(0XBA);    //校验和
 
-  Serial2.begin(115200);//超声波串口波特率
-
   // wdt_enable(WDTO_500MS);//开启看门狗，并设置溢出时间为500ms
 
   attachInterrupt(encoder_pin, encoder_function , RISING);//中断源，函数encoder_function()，上升沿触发
@@ -154,7 +150,7 @@ void loop()
     serial_port();//读取串口数据
     if ( check == host_unmanned + steering_whell_voltage_out_pwm + accelerator_voltage_out_pwm + brake_unmanned )//校验数据是否正确
     {
-      if (brake_unmanned = true||digitalRead(brake_in) == HIGH)
+      if (brake_unmanned = true || digitalRead(brake_in) == HIGH)
       {
         brake();
       }
@@ -209,9 +205,9 @@ void brake()//刹车函数ABS防抱死TAT
     analogWrite(accelerator_voltage, 0); //油门输出0
     digitalWrite(led_brake, HIGH);//亮个刹车灯
     digitalWrite(brake_out, HIGH);
-    delay(500); 
+    delay(500);
     digitalWrite(brake_out, LOW);
-    delay(500);  
+    delay(500);
     digitalWrite(brake_out, HIGH);
     delay(100);
     digitalWrite(brake_out, LOW);
@@ -219,5 +215,5 @@ void brake()//刹车函数ABS防抱死TAT
     digitalWrite(brake_out, HIGH);
   }
   while (digitalRead(brake_in) == LOW);
-      digitalWrite(led_brake, LOW);
-  }
+  digitalWrite(led_brake, LOW);
+}
