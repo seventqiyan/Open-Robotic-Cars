@@ -1,6 +1,6 @@
 /*
   由于资源占用原因，测距模块独立出来，交给328P来做
-  串口被用作超声波测距，故采用IIC方式与2560通信
+  串口被用作超声波测距，故采用串口方式与2560通信
   测距一次需要60ms，也就是说一秒钟最多16次
 
   1-----2-----3
@@ -16,7 +16,7 @@
 
 
 #include <avr/wdt.h>//看门狗
-#include <Wire.h>//IIC通信
+//#include <Wire.h>//IIC通信
 
 #include <SoftwareSerial.h>
 SoftwareSerial mySerial(2, 3); //用2，3作为虚拟串口（RX，TX）
@@ -49,14 +49,20 @@ void loop()
   {
     Serial.write(0x54);
     Serial.write(obstacle_number[i]);
-
+    delay(60);
 
   }
 
 
 
 }
-void obstacle_serial()
+
+void serial_read()//读取串口赋值
+{
+
+
+}
+void obstacle_serial()//输出给2560
 {
   mySerial.print(obstacle_1);//
   mySerial.print(",");
@@ -74,7 +80,6 @@ void obstacle_serial()
   mySerial.print(",");
   mySerial.print(obstacle_8);//
 }
-
 /*更新地址部分(例子)
   void update_address()
   {
