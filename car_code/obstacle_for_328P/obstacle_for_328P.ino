@@ -1,4 +1,5 @@
 /*
+  T`A = 565mm   B = 628mm  D = err
   由于资源占用原因，测距模块独立出来，交给328P来做
   串口被用作超声波测距，故采用串口方式与2560通信
   测距一次需要60ms，也就是说一秒钟最多16次
@@ -22,9 +23,12 @@
 SoftwareSerial mySerial(2, 3); //用2，3作为虚拟串口（RX，TX）
 
 String data = "";//字符串变量，赋空值
-int obstacle_number[8] = {0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67}; //分别对应超声波1~8
-int long iic_data[8] = {0};
+int  obstacle_number[8] = {0x60, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67}; //分别对应超声波1~8
+int long uart_data[8] = {0};
+
 int counter = 0;//测距状态定义
+int serial_tag = 0;//标记串口是否被读取
+
 int led = 13; //定义指示灯引脚为13
 int obstacle_1,/*超声波1距离*/
     obstacle_2,/*2*/
@@ -47,9 +51,16 @@ void loop()
 {
   for (int i = 1; i < 8; i++)
   {
-    Serial.write(0x54);
-    Serial.write(obstacle_number[i]);
-    delay(60);
+    Serial.write(0x54);//模块测距命令
+    Serial.write(obstacle_number[i]);//模块地址
+
+    while (Serial2.available() > 0)  //等到串口有数据
+    {
+      data += char(Serial2.read()); //把串口数据给data字符串
+      delay(2);  //等一会，不然会丢数据（只大不小）
+    }
+
+
 
   }
 
