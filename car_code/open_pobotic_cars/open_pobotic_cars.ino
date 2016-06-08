@@ -1,11 +1,11 @@
 /*
-  由于使用了看门狗，请用ISP直接烧录！
-  定时器与引脚关系
-  timer 0 (controls pin 13, 4)
-  timer 1 (controls pin 12, 11)
-  timer 2 (controls pin 10, 9)//由于使用了定时中断这里不能用作PWM输出了
-  timer 3 (controls pin 5, 3, 2)
-  timer 4 (controls pin 8, 7, 6)
+   由于使用了看门狗，请用ISP直接烧录！
+   定时器与引脚关系
+   timer 0 (controls pin 13, 4)
+   timer 1 (controls pin 12, 11)
+   timer 2 (controls pin 10, 9)//由于使用了定时中断这里不能用作PWM输出了
+   timer 3 (controls pin 5, 3, 2)
+   timer 4 (controls pin 8, 7, 6)
  ********************* 串口通信协议部分********************
   许可状态+方向+速度+刹车+总和（中间使用","分割，电脑赋值check）
   /*******************头文件引用部分****************/
@@ -14,17 +14,11 @@
 
 #include <U8glib.h>//显示屏
 U8GLIB_ST7920_128X64 u8g(2, 3, 4, U8G_PIN_NONE); //SCK = en = 18, MOSI = rw = 16, CS = di = 17//屏幕接线（已经调试完毕原值：3,9,8）
-
-//#include <avr/wdt.h>//看门狗
-
-#include<FlexiTimer2.h>//定时中断（2560用这个）
-
 #include <Servo.h>//舵机库
-
-#include <Wire.h>//IIC通信
-
-#include <PID_v1.h>//PID库不懂的看这里：http://playground.arduino.cc/Code/PIDLibrary
-
+//#include <avr/wdt.h>//看门狗
+//#include<FlexiTimer2.h>//定时中断（2560用这个）
+//#include <Wire.h>//IIC通信
+//#include <PID_v1.h>//PID库不懂的看这里：http://playground.arduino.cc/Code/PIDLibrary
 
 
 /*******************常量定义部分******************/
@@ -109,12 +103,12 @@ void setup()
   pinMode(led_left, OUTPUT);//左转灯输出引脚定义
   pinMode(led_right, OUTPUT);//右转灯输出引脚定义
 
-  Wire.begin();//不设置地址，当作主机
-
-  ADCSRA |=  (1 << ADPS2);
-  ADCSRA &=  ~(1 << ADPS1);
-  ADCSRA &=  ~(1 << ADPS0);
-
+  // Wire.begin();//不设置地址，当作主机
+  /*
+    ADCSRA |=  (1 << ADPS2);
+    ADCSRA &=  ~(1 << ADPS1);
+    ADCSRA &=  ~(1 << ADPS0);
+  */
 }
 /***********************************************/
 void loop()
@@ -136,7 +130,8 @@ void loop()
     analogWrite(accelerator_voltage, accelerator_voltage_out_pwm); //油门输出
     //方向(测试部分代码)
     steering_whell_voltage_out_pwm = map(steering_whell_voltage_adc, 0, 1024, 1000, 2000);//方向缩放赋值（待调试！！！）
-    if (1450 <= steering_whell_voltage_out_pwm <= 1550) {
+    if (1450 <= steering_whell_voltage_out_pwm <= 1550)//在这个区间内默认为回中偏差
+    {
       steering_whell_voltage_out_pwm = 1500; //消除回中偏差造成的抖动
     }
     steering.writeMicroseconds(steering_whell_voltage_out_pwm); //方向输出
@@ -146,7 +141,7 @@ void loop()
     //自动控制
     total_state = true; //总状态
     Serial.print("Data");//向电脑要数据
-    delay(2);//延时
+    delay(2);//延时，等待计算机给数据
     serial_port();//读取串口数据
     if ( check == host_unmanned + steering_whell_voltage_out_pwm + accelerator_voltage_out_pwm + brake_unmanned )//校验数据是否正确
     {
@@ -160,60 +155,15 @@ void loop()
     }
     else
     {
-      Serial.print("Data_Error");//数据不对~
+      Serial.print("Data_Error");//数据不对,请求再次给数据
     }
   }
   speed_per_hour();//转速以及时速函数
 
-  u8g.firstPage();//显示必备，将来肯定要去掉的
+  u8g.firstPage();//显示必备，将来肯定要去掉的~
   do
   {
     lcd();
   } while ( u8g.nextPage() );
   // wdt_reset();//喂狗
-}
-/******************函数部分*************************/
-
-void emergency_switch()//紧急切换开关函数
-{
-  if (digitalRead(emergency_switch_pin) == HIGH)
-    unmanned = false;
-  else
-    unmanned = true;
-}
-/*
-*/
-void encoder_function()//测速中断函数
-{
-  if (encoder_count = 0 ) {
-    encoder_time0 = micros();
-    encoder_count = 1;
-  }
-  else {
-    encoder_time1 = micros() - encoder_time0;
-    encoder_count = 0;
-  }
-}
-
-void speed_per_hour()//转速，时速函数
-{
-  tire_speed = 60000 / encoder_time1;//求转速r/min
-  per_hour = (tire_speed * perimeter) * 6; //千米每小时km/h
-}
-void brake()//刹车函数ABS防抱死TAT
-{ do {
-    analogWrite(accelerator_voltage, 0); //油门输出0
-    digitalWrite(led_brake, HIGH);//亮个刹车灯
-    digitalWrite(brake_out, HIGH);
-    delay(500);
-    digitalWrite(brake_out, LOW);
-    delay(500);
-    digitalWrite(brake_out, HIGH);
-    delay(100);
-    digitalWrite(brake_out, LOW);
-    delay(100);
-    digitalWrite(brake_out, HIGH);
-  }
-  while (digitalRead(brake_in) == LOW);
-  digitalWrite(led_brake, LOW);
 }
