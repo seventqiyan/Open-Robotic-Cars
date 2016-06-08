@@ -4,8 +4,7 @@
 #include <string.h>
 
 String comdata = "";
-char* b[3]; int j = 0;
-int a, c;
+String com = "";
 void setup()
 {
   Serial.begin(115200);
@@ -18,22 +17,8 @@ void loop()
     comdata += char(Serial.read());
     delay(2);
   }
-  int k = comdata.length();
-  char data[k + 1];
-  for (int i = 0; i < k; i++)
-  {
-    data[i] = comdata[i];
-  }
-  char *token = strtok(data, "mm");
-  while (token != NULL)
-  {
-    j++;
-    b[j] = token = strtok(NULL, "mm");
-  }
-  a = atoi(b[1]);
-  c = atoi(b[2]);
-  Serial.print(a);
-  Serial.println(c);
+trim(comdata, com);
+
 }
 
 
