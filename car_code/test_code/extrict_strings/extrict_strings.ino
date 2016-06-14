@@ -3,8 +3,10 @@
 #include <stdio.h>
 #include <string.h>
 
-String comdata = "";
-String com = "";
+int i;   // 保存PWM需要输出的值
+String inString = "";   // 输入的字符串
+char LED = ' ';   // 用于判断指定LED颜色对应的引脚
+boolean stringComplete = false; // 用于判断数据是否读取完成
 void setup()
 {
   Serial.begin(115200);
@@ -14,11 +16,16 @@ void loop()
 {
   while (Serial.available() > 0)
   {
-    comdata += char(Serial.read());
+    char data = Serial.read();
     delay(2);
   }
-trim(comdata, com);
+  if (isDigit(inChar))
+  {
+inString += inChar;
 
+  }
+  //char str[comdata.length()];
+  // n = atoi(comdata);
 }
 
 

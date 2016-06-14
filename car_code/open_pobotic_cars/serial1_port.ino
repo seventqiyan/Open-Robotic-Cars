@@ -1,4 +1,4 @@
-
+/*超声波串口接收函数*/
 void serial2_port()
 {
   String com1_data = "";//字符串变量，赋空值
