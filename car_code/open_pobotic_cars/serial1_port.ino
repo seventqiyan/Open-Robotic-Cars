@@ -2,7 +2,7 @@
 void serial2_port()
 {
   String com1_data = "";//字符串变量，赋空值
-  int long osb_data[8] = {0}, serial1_tag = 0;
+  int long osb_data[9] = {0}, serial1_tag = 0;
   int long osb_check;//校验值
   int j = 0; //j为拆分后数组的位置计数
   while (Serial1.available() > 0)//不断检查串口是否有数据

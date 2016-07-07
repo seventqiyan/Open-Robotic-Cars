@@ -68,7 +68,7 @@ unsigned int tellurometer_survey;//微波测距
 
 //串口变量(上位机)
 String com_data = "";//字符串变量，赋空值
-int long num_data[4] = {0}, serial_tag = 0;
+int long num_data[5] = {0}, serial_tag = 0;
 int long check;//校验值
 
 //串口1变量（加速度传感器）
