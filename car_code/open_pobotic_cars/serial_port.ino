@@ -38,10 +38,10 @@ void serial_port()
       }
   }
   com_data = String("");//清空comdata以便下一次使用
-  host_unmanned = num_data[1];//电脑许可状态赋值
-  steering_whell_voltage_out_pwm = num_data[2];//方向赋值
-  accelerator_voltage_out_pwm = num_data[3];//油门赋值
-  brake_unmanned = num_data[4];//刹车状态
-  check = num_data[5];//校验值赋值
+  host_unmanned = num_data[0];//电脑许可状态赋值
+  steering_whell_voltage_out_pwm = num_data[1];//方向赋值
+  accelerator_voltage_out_pwm = num_data[2];//油门赋值
+  brake_unmanned = num_data[3];//刹车状态
+  check = num_data[4];//校验值赋值
   serial_tag = 0;//serial_tag置0
 }

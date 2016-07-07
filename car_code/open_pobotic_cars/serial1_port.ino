@@ -2,7 +2,7 @@
 void serial2_port()
 {
   String com1_data = "";//字符串变量，赋空值
-  int long osb_data[5] = {0}, serial1_tag = 0;
+  int long osb_data[8] = {0}, serial1_tag = 0;
   int long osb_check;//校验值
   int j = 0; //j为拆分后数组的位置计数
   while (Serial1.available() > 0)//不断检查串口是否有数据
@@ -26,14 +26,14 @@ void serial2_port()
       }
   }
   com1_data = String("");
-  obstacle_1 = osb_data[1];
-  obstacle_2 = osb_data[2];
-  obstacle_3 = osb_data[3];
-  obstacle_4 = osb_data[4];
-  obstacle_5 = osb_data[5];
-  obstacle_6 = osb_data[6];
-  obstacle_7 = osb_data[7];
-  obstacle_8 = osb_data[8];
-  osb_check = osb_data[9];
+  obstacle_1 = osb_data[0];
+  obstacle_2 = osb_data[1];
+  obstacle_3 = osb_data[2];
+  obstacle_4 = osb_data[3];
+  obstacle_5 = osb_data[4];
+  obstacle_6 = osb_data[5];
+  obstacle_7 = osb_data[6];
+  obstacle_8 = osb_data[7];
+  osb_check = osb_data[8];//超声波检验值
   serial1_tag = 0;//serial_tag置0
 }

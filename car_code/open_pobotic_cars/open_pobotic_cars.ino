@@ -20,7 +20,6 @@ U8GLIB_ST7920_128X64 u8g(2, 3, 4, U8G_PIN_NONE); //SCK = en = 18, MOSI = rw = 16
 //#include <Wire.h>//IIC通信
 //#include <PID_v1.h>//PID库不懂的看这里：http://playground.arduino.cc/Code/PIDLibrary
 
-
 /*******************常量定义部分******************/
 const int perimeter = 60;//轮胎周长单位/cm
 Servo steering;//方向舵机
@@ -69,7 +68,7 @@ unsigned int tellurometer_survey;//微波测距
 
 //串口变量(上位机)
 String com_data = "";//字符串变量，赋空值
-int long num_data[5] = {0}, serial_tag = 0;
+int long num_data[4] = {0}, serial_tag = 0;
 int long check;//校验值
 
 //串口1变量（加速度传感器）
@@ -104,11 +103,11 @@ void setup()
   pinMode(led_right, OUTPUT);//右转灯输出引脚定义
 
   // Wire.begin();//不设置地址，当作主机
-  /*
+  
     ADCSRA |=  (1 << ADPS2);
     ADCSRA &=  ~(1 << ADPS1);
     ADCSRA &=  ~(1 << ADPS0);
-  */
+  
 }
 /***********************************************/
 void loop()
