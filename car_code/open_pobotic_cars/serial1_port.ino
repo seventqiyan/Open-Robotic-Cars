@@ -34,6 +34,6 @@ void serial2_port()
   obstacle_6 = osb_data[5];
   obstacle_7 = osb_data[6];
   obstacle_8 = osb_data[7];
-  osb_check = osb_data[8];//超声波检验值
+  osb_check  = osb_data[8];//超声波检验值
   serial1_tag = 0;//serial_tag置0
 }

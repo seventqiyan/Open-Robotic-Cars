@@ -75,10 +75,16 @@ int long check;//校验值
 int ACC[3];
 unsigned char Re_buf[11], counter = 0;
 int ACC_x, ACC_y, ACC_z;
+
+//单次循环耗时
+unsigned int cpu_time1;
+unsigned int cpu_time2;
+unsigned int cpu_time3;
+
 /*************************************************/
 void setup()
 {
-
+  cpu_time1 = micros();//时间赋值，用来计算单次循环耗时
   Serial.begin(115200);//上位机串口波特率
 
   Serial1.begin(115200);//GY953传感器串口波特率
@@ -103,11 +109,11 @@ void setup()
   pinMode(led_right, OUTPUT);//右转灯输出引脚定义
 
   // Wire.begin();//不设置地址，当作主机
-  
-    ADCSRA |=  (1 << ADPS2);
-    ADCSRA &=  ~(1 << ADPS1);
-    ADCSRA &=  ~(1 << ADPS0);
-  
+
+  ADCSRA |=  (1 << ADPS2);
+  ADCSRA &=  ~(1 << ADPS1);
+  ADCSRA &=  ~(1 << ADPS0);
+
 }
 /***********************************************/
 void loop()
@@ -149,7 +155,6 @@ void loop()
         brake();
       }
       analogWrite(accelerator_voltage, accelerator_voltage_out_pwm); //油门输出
-      //方向待写
       steering.writeMicroseconds(steering_whell_voltage_out_pwm); //方向输出
     }
     else
@@ -165,4 +170,5 @@ void loop()
     lcd();
   } while ( u8g.nextPage() );
   // wdt_reset();//喂狗
+  cpu_time2 = micros();
 }
