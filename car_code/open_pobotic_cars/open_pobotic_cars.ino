@@ -84,7 +84,6 @@ unsigned int cpu_time3;
 /*************************************************/
 void setup()
 {
-  cpu_time1 = micros();//时间赋值，用来计算单次循环耗时
   Serial.begin(115200);//上位机串口波特率
 
   Serial1.begin(115200);//GY953传感器串口波特率
@@ -118,7 +117,7 @@ void setup()
 /***********************************************/
 void loop()
 {
-
+  cpu_time1 = micros();//时间赋值，用来计算单次循环耗时
   if ((unmanned == false && host_unmanned == true)//(手动不允许，电脑允许)
       || (unmanned == false && host_unmanned == false)//(手动电脑都不允许)
       || (unmanned == true && host_unmanned == false)) //(手动允许电脑不允许)
@@ -131,10 +130,10 @@ void loop()
     {
       brake();//刹车
     }
-    accelerator_voltage_out_pwm = map(accelerator_voltage_adc, 0, 1024, 0, 255);//缩放赋值（待调试！！！）
+    accelerator_voltage_out_pwm = map(accelerator_voltage_adc, 0, 1023, 0, 255);//缩放赋值（待调试！！！）
     analogWrite(accelerator_voltage, accelerator_voltage_out_pwm); //油门输出
     //方向(测试部分代码)
-    steering_whell_voltage_out_pwm = map(steering_whell_voltage_adc, 0, 1024, 1000, 2000);//方向缩放赋值（待调试！！！）
+    steering_whell_voltage_out_pwm = map(steering_whell_voltage_adc, 0, 1023, 1000, 2000);//方向缩放赋值（待调试！！！）
     if (1450 <= steering_whell_voltage_out_pwm <= 1550)//在这个区间内默认为回中偏差
     {
       steering_whell_voltage_out_pwm = 1500; //消除回中偏差造成的抖动
@@ -150,9 +149,9 @@ void loop()
     serial_port();//读取串口数据
     if ( check == host_unmanned + steering_whell_voltage_out_pwm + accelerator_voltage_out_pwm + brake_unmanned )//校验数据是否正确
     {
-      if (brake_unmanned = true || digitalRead(brake_in) == HIGH)
+      if (brake_unmanned = true || digitalRead(brake_in) == HIGH)//刹车状态为真，或急停为真
       {
-        brake();
+        brake();//刹车
       }
       analogWrite(accelerator_voltage, accelerator_voltage_out_pwm); //油门输出
       steering.writeMicroseconds(steering_whell_voltage_out_pwm); //方向输出
@@ -171,4 +170,5 @@ void loop()
   } while ( u8g.nextPage() );
   // wdt_reset();//喂狗
   cpu_time2 = micros();
+  cpu_time();
 }

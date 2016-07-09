@@ -30,7 +30,7 @@ void speed_per_hour()//转速，时速函数
 void cpu_time()//单次循环耗时
 {
   cpu_time3 = cpu_time1 - cpu_time2;
-  Serial.print("cpu_time");
+  Serial.print("cpu_time=");
   Serial.println(cpu_time3);
   cpu_time1 = cpu_time2 = cpu_time3 = 0;
 }

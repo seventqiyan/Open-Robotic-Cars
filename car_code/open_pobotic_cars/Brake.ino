@@ -12,6 +12,6 @@ void brake()//刹车函数ABS防抱死TAT
     delay(100);
     digitalWrite(brake_out, HIGH);
   }
-  while (digitalRead(brake_in) == LOW);
+  while (brake_unmanned = false || digitalRead(brake_in) == LOW);
   digitalWrite(led_brake, LOW);
 }
